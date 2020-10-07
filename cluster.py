@@ -38,9 +38,11 @@ def licz(clustNum,points,startingCentroids):
     newCentroids=makeCentroids(startClusters,points)
     clusters=[]
     breakLoop=False
-    for i in range(0,5):
+    iterator=0
+    while(not breakLoop):
         os.system('cls')
-        print('percentage of finish ',(i+1)*100/1000,'%')
+        iterator+=1
+        print(iterator)
         clusters=[[] for i in range(0,clustNum)]
         for point in points:
             distances=[]
@@ -49,9 +51,23 @@ def licz(clustNum,points,startingCentroids):
                 distances.append([distance,idx])
             sortedDist=sorted(distances, key=lambda x: x[0])
             clusters[sortedDist[0][1]].append(point)
-        newCentroids=makeCentroids(clusters,points)
-        # porownac shape
-        startClusters=clusters
+        areEqual=[]
+        for row,startRow in zip(clusters,startClusters):
+            
+            if np.shape(row)==np.shape(startRow):
+                anded=np.logical_and(row,startRow)
+                andedXs=[point[0] for point in anded]
+                andedYs=[point[1] for point in anded]
+                if all(andedXs) and all(andedYs):
+                    areEqual.append(True)
+            else:
+                areEqual.append(False)
+        if all(areEqual):
+            breakLoop=True
+        else:
+            newCentroids=makeCentroids(clusters,points)
+            # porownac shape
+            startClusters=clusters
     return clusters,newCentroids
 
 def plotPoints(startCentroids,colors,cluster):
@@ -66,7 +82,7 @@ def plotPoints(startCentroids,colors,cluster):
         plt.scatter(centroid[0],centroid[1],s=50,color=color)
     plt.show()
 
-X, y_true = make_blobs(n_samples=300, centers=4,cluster_std=0.60, random_state=0)
+X, y_true = make_blobs(n_samples=1000, centers=2,cluster_std=0.9)
 startCentroids=[[-3,0],[3,0],[0,6]]
 cluster,centroids=licz(3,X,startCentroids)
 colors=['red','green','blue']
