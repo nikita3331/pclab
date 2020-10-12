@@ -80,6 +80,8 @@ def plotPoints(startCentroids,colors,cluster):
 
         plt.scatter(x,y,s=10,color=color)
         plt.scatter(centroid[0],centroid[1],s=50,color=color)
+    plt.xscale('linear')
+    plt.yscale('linear')
     plt.show()
 
 X, y_true = make_blobs(n_samples=1000, centers=2,cluster_std=0.9)
