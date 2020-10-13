@@ -1,95 +1,80 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.datasets import make_blobs
 import math
 import os
+from mymeans import MyKmeans
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 
-def distEuclid(p1,p2):
-    dist=math.sqrt(  (p1[0]-p2[0])**2+ (p1[1]-p2[1])**2 )
-    return dist
-def makeStartingClusters(clustNum,points,startingCentroids):
-    clusters=[[] for i in range(0,clustNum)]
-    for point in points:
-        distances=[]
-        for idx,centroid in enumerate(startingCentroids):
-            distance=distEuclid(centroid,point)
-            distances.append([distance,idx])
-        sortedDist=sorted(distances, key=lambda x: x[0])
-        clusters[sortedDist[0][1]].append(point)
-    return clusters
-def makeCentroids(clusters,points):
-    newcentroids=[]
-    for cluster in clusters:
-        # now we need to find our centroid
-        meanDistances=[]
-        for idx,semiCluster in enumerate(cluster):
-            distanceSum=0
-            for point in cluster:
-                distanceSum+=distEuclid(semiCluster,point)
-            meanDistances.append([distanceSum,idx])
-        sortedMean=sorted(meanDistances, key=lambda x: x[0])
-        newPointIdx=sortedMean[0][1]
-        newcentroids.append( cluster[newPointIdx] )
-    return newcentroids
+def loadFiles():
+    f = open("breast.txt", "r")
+    total=[]
+    for idx,x in enumerate(f):
+        arr=x.split(' ')
+        line=[]
+        for i in arr:
+            if i!='':
+                line.append(float(i.replace('\n','')))
+        total.append(np.array(line))
+    f.close()
+    return total
 
-
-def licz(clustNum,points,startingCentroids):
-    startClusters=makeStartingClusters(clustNum,points,startingCentroids)
-    newCentroids=makeCentroids(startClusters,points)
-    clusters=[]
-    breakLoop=False
-    iterator=0
-    while(not breakLoop):
-        os.system('cls')
-        iterator+=1
-        print(iterator)
-        clusters=[[] for i in range(0,clustNum)]
-        for point in points:
-            distances=[]
-            for idx,centroid in enumerate(newCentroids):
-                distance=distEuclid(centroid,point)
-                distances.append([distance,idx])
-            sortedDist=sorted(distances, key=lambda x: x[0])
-            clusters[sortedDist[0][1]].append(point)
-        areEqual=[]
-        for row,startRow in zip(clusters,startClusters):
-            
-            if np.shape(row)==np.shape(startRow):
-                anded=np.logical_and(row,startRow)
-                andedXs=[point[0] for point in anded]
-                andedYs=[point[1] for point in anded]
-                if all(andedXs) and all(andedYs):
-                    areEqual.append(True)
-            else:
-                areEqual.append(False)
-        if all(areEqual):
-            breakLoop=True
-        else:
-            newCentroids=makeCentroids(clusters,points)
-            # porownac shape
-            startClusters=clusters
-    return clusters,newCentroids
-
-def plotPoints(startCentroids,colors,cluster):
-    for row,centroid,color in zip(cluster,startCentroids,colors):
-        x=[]
-        y=[]
-        for p in row:
-            x.append(p[0])
-            y.append(p[1])
-
-        plt.scatter(x,y,s=10,color=color)
-        plt.scatter(centroid[0],centroid[1],s=50,color=color)
-    plt.xscale('linear')
-    plt.yscale('linear')
-    plt.show()
-
-X, y_true = make_blobs(n_samples=1000, centers=2,cluster_std=0.9)
-startCentroids=[[-3,0],[3,0],[0,6]]
-cluster,centroids=licz(3,X,startCentroids)
-colors=['red','green','blue']
-plotPoints(centroids,colors,cluster)
+    
+def plotNormalScatter(points,threeD): #helper function for reading initial cluster points
+    if not threeD:
+        xs=[]
+        ys=[]
+        for i in points:
+            xs.append(i[0])
+            ys.append(i[1])
+        fig, ax = plt.subplots()
+        onclick=lambda event: print('[',event.xdata, ',',event.ydata,']')
+        cid = fig.canvas.mpl_connect('button_press_event', onclick)
+        ax.scatter(xs,ys)
+        plt.show()
+    else:
+        xs=[]
+        ys=[]
+        zs=[]
+        for i in points:
+            xs.append(i[0])
+            ys.append(i[1])
+            zs.append(i[2])
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(xs, ys, zs)
+        ax.set_xlabel('X Label')
+        ax.set_ylabel('Y Label')
+        ax.set_zlabel('Z Label')
+        plt.show()
+        
+def transformPoints(points):
+    firstDim=[]
+    secondDim=[]
+    thirdDim=[]
+    for idx,row in enumerate(loadedPoints):
+        firstDim.append([row[0],row[1],row[2]])
+        secondDim.append([row[3],row[4],row[5]])
+        thirdDim.append([row[6],row[7],row[8]])
+    return firstDim,secondDim,thirdDim
+loadedPoints=loadFiles()
+first,second,third=transformPoints(loadedPoints)
 
 
-# plt.scatter(X[:, 0], X[:, 1], s=25)
-# plt.show()
+# print(secondDim)
+# print(thirdDim)
+
+# plotNormalScatter(first,True)
+
+
+
+
+
+startCentroids=[[5,3,3,3,2,1,6,3,2],[1,1,1,1,1,1,1,1,1]]
+# colors=['INDIANRED','SALMON','CRIMSON','PINK','DEEPPINK','YELLOW','DARKKHAKI','LAVENDER','DARKVIOLET','GREENYELLOW','GREEN','AQUA','DEEPSKYBLUE','MIDNIGHTBLUE','GAINSBORO']
+# startCentroids=[[ 250615.42836644774 , 848685.4077477583 ],[ 424033.15398022893 , 791208.2192331479 ],[ 664310.7256137813 , 856896.4346784169 ],[ 334190.2358911616 , 572247.5010822512 ],[ 666400.0958018991 , 878792.5064935066 ],[ 599540.249782128 , 572247.5010822512 ],[ 823102.8599107376 , 717308.9768572203 ],[ 833549.7108513268 , 517507.32154452696 ],[ 179576.841970441 , 366971.8278157854 ],[ 403139.4520990505 , 410763.97144596477 ],[ 614165.841098953 , 410763.97144596477 ],[ 789672.9369008521 , 295809.59441674396 ],[ 321654.0147624545 , 156222.13659554734 ],[ 513876.0720692964 , 150748.1186417749 ],[ 848175.3021681518 , 148011.10966488873 ]]
+colors=['red','green']
+km=MyKmeans(2,loadedPoints,startCentroids)
+cluster,centroids=km.createClusters()
+#km.plotPoints(centroids,colors,cluster)
+km.plotPoints3D(centroids,colors,cluster)
+
