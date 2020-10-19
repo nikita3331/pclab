@@ -9,7 +9,7 @@ class MyKmeans():
         self.points=points
         self.clustNum=clustNum
         self.startingCentroids=startingCentroids
-    def distEuclid(self,p1,p2):
+    def distEuclid(self,p1,p2): #someday we can put another distance here for better clustering
         differences=p1-p2
         squares=np.square(differences)
         sumed=sum(squares)
@@ -65,16 +65,18 @@ class MyKmeans():
                 clusters[sortedDist[0][1]].append(point)
             areEqual=[]
             for row,startRow in zip(clusters,startClusters):
-                
+                #all this routine was made because we can't put equal sign between arrays
                 if np.shape(row)==np.shape(startRow):
                     anded=np.logical_and(row,startRow)
                     andedXs=[point[0] for point in anded]
                     andedYs=[point[1] for point in anded]
                     if all(andedXs) and all(andedYs):
                         areEqual.append(True)
+                    else:
+                        areEqual.append(False)
                 else:
                     areEqual.append(False)
-            if all(areEqual):
+            if all(areEqual):#there were no more jumping
                 breakLoop=True
             else:
                 newCentroids=self.makeCentroids(clusters)
@@ -89,7 +91,7 @@ class MyKmeans():
                 y.append(p[1])
 
             plt.scatter(x,y,s=10,color=color)
-            plt.scatter(centroid[0],centroid[1],s=100,color=color)
+            plt.scatter(centroid[0],centroid[1],s=100,color='pink')#change color=color for better appereance
         plt.xscale('linear')
         plt.yscale('linear')
         plt.show()
