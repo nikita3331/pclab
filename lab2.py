@@ -3,9 +3,10 @@ import numpy as np
 import math
 import os
 from mymeans import MyKmeans
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
+from mpl_toolkits.mplot3d import Axes3D  
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
+from minisom import MiniSom #https://github.com/JustGlowing/minisom/blob/master/examples/Clustering.ipynb
 
 def loadFiles(name):
     f = open(name, "r")
@@ -36,6 +37,7 @@ def createData(clust):
     trainingOutput=[]
     validatingInput=[]
     validatingOutput=[]
+    allData=[]
     for clustNumber,singleClust in enumerate(clust):
         for pInd,point in enumerate(singleClust):
             if pInd<trainingPercentage*len(singleClust):
@@ -44,10 +46,13 @@ def createData(clust):
             else:
                 validatingInput.append(point)
                 validatingOutput.append(clustNumber)
+        allData.append(point)
     standard = StandardScaler()
     trainingInput=standard.fit_transform(trainingInput)
     validatingInput=standard.fit_transform(validatingInput)
-    return (trainingInput,trainingOutput),(validatingInput,validatingOutput)
+
+    fullScaled=standard.fit_transform(allData)
+    return (trainingInput,trainingOutput),(validatingInput,validatingOutput),fullScaled
 def trainAndClasify(trainData,validData):
     clf = MLPClassifier(solver='sgd', random_state=1,activation='logistic',max_iter=200,verbose=True)
     clf.fit(trainData[0], trainData[1])
@@ -65,14 +70,59 @@ def plotResult(predY,validationXSYS,realY,colors):
     for point,colorIndex in zip(validationXSYS,predY):
         plt.scatter(point[0],point[1],color=colors[colorIndex]) 
     plt.show()
+def testSom(scaledInp,clust_ind,centroids,centrKnn,outPuts):
+    print(centroids[0])
+    translatedIndexes=np.zeros(np.shape(centrKnn)[0])
+    for  idx,predCentr in enumerate(centroids[0]):
+        distance=100000
+        
+        for knnInd,cen in enumerate(centrKnn):
+            currDist=math.sqrt( (cen[0]-predCentr[0])**2+(cen[1]-predCentr[1])**2)
+            if currDist<distance:
+                distance=currDist
+                translatedIndexes[idx]= knnInd# 0-th index of start centroid is 8th index of these centroids
 
+    goodAns=0
+    total=0
+    for ind in np.unique(clust_ind):
+        currPoints=scaledInp[clust_ind == ind]
+        for p in currPoints:
+            for scalInd,scaledPoint in enumerate(scaledInp):
+                if scaledPoint[0]==p[0] and scaledPoint[1]==p[1]:
+                    if outPuts[scalInd]==translatedIndexes[ind]:
+                        goodAns+=1
+            total+=1
+    print(goodAns/total)
+
+def trainAndCreateSom(scaledInputs,outPuts,colors,knnCentr):
+    features=2
+    som_shape=(1,15)
+    som =   MiniSom(som_shape[0],som_shape[1],features, sigma=.5, learning_rate=.5, random_seed=10)
+    som.train_batch(scaledInputs, 38000, verbose=True)
+    winner_coordinates = np.array([som.winner(x) for x in scaledInputs]).T
+    cluster_index = np.ravel_multi_index(winner_coordinates, som_shape)
+    for ind,colo in zip(np.unique(cluster_index),colors):
+        plt.scatter(scaledInputs[cluster_index == ind, 0],scaledInputs[cluster_index == ind, 1], label='cluster='+str(ind),color=colo)
+    testSom(scaledInputs,cluster_index,som.get_weights(),knnCentr,outPuts)
+    # plotting centroids
+    for centroid in som.get_weights():
+        plt.scatter(centroid[:, 0], centroid[:, 1], marker='x',s=80, linewidths=35, color='k', label='centroid')
+    plt.legend()
+    plt.show()
 
 colors=['INDIANRED','SALMON','CRIMSON','PINK','DEEPPINK','YELLOW','DARKKHAKI','LAVENDER','DARKVIOLET','GREENYELLOW','GREEN','AQUA','DEEPSKYBLUE','MIDNIGHTBLUE','GAINSBORO']
 
 clust,centr=doS1(colors)
-training,validating=createData(clust)
-predicted=trainAndClasify(training,validating)
-plotResult(predicted,validating[0],validating[1],colors)
+standard = StandardScaler()
+
+ne=standard.fit_transform(centr)
+
+training,validating,fullScaled=createData(clust)
+
+somPredicted=trainAndCreateSom(training[0],training[1],colors,ne)
+
+# predicted=trainAndClasify(training,validating)
+# plotResult(predicted,validating[0],validating[1],colors)
 
 
 
