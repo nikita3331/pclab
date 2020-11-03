@@ -54,28 +54,25 @@ def createData(clust):
     fullScaled=standard.fit_transform(allData)
     return (trainingInput,trainingOutput),(validatingInput,validatingOutput),fullScaled
 def trainAndClasify(trainData,validData):
-    clf = MLPClassifier(solver='sgd', random_state=1,activation='logistic',max_iter=200,verbose=True)
+    clf = MLPClassifier(solver='sgd', random_state=1,activation='logistic',max_iter=200,verbose=False)
     clf.fit(trainData[0], trainData[1])
     predicted=clf.predict(validData[0])
 
     goodAnswers=0
     for pre,rea in zip(predicted,validData[1]):
-        print('predicted value = ',pre,'real value = ',rea)
         if pre==rea:
             goodAnswers+=1
     totalPercentage=goodAnswers*100/len(predicted)
-    print('Total good predictions',totalPercentage,'%')
-    return predicted
-def plotResult(predY,validationXSYS,realY,colors):
+    return predicted,totalPercentage
+def plotResultNN(predY,validationXSYS,realY,colors,result):
     for point,colorIndex in zip(validationXSYS,predY):
-        plt.scatter(point[0],point[1],color=colors[colorIndex]) 
+        plt.scatter(point[0],point[1],color=colors[colorIndex])
+    plt.title('NN clusters accuracy '+str(result)+'%')
     plt.show()
-def testSom(scaledInp,clust_ind,centroids,centrKnn,outPuts):
-    print(centroids[0])
+def testSom(scaledInp,clust_ind,centroids,centrKnn,outPuts,scaledTestInput,scaledTestOutput):
     translatedIndexes=np.zeros(np.shape(centrKnn)[0])
-    for  idx,predCentr in enumerate(centroids[0]):
+    for  idx,predCentr in enumerate(centroids[0]):#convert cluster indexes from KNN ,to cluster indexes of SOM
         distance=100000
-        
         for knnInd,cen in enumerate(centrKnn):
             currDist=math.sqrt( (cen[0]-predCentr[0])**2+(cen[1]-predCentr[1])**2)
             if currDist<distance:
@@ -84,45 +81,59 @@ def testSom(scaledInp,clust_ind,centroids,centrKnn,outPuts):
 
     goodAns=0
     total=0
-    for ind in np.unique(clust_ind):
+    for ind in np.unique(clust_ind): #test all points in new clusters, are they correct.
         currPoints=scaledInp[clust_ind == ind]
-        for p in currPoints:
+        for p in currPoints: #better would be list.lindex(), but it returned array ,so I just stick to iterating for conveniency.
             for scalInd,scaledPoint in enumerate(scaledInp):
                 if scaledPoint[0]==p[0] and scaledPoint[1]==p[1]:
-                    if outPuts[scalInd]==translatedIndexes[ind]:
+                    if scaledTestOutput[scalInd]==translatedIndexes[ind]:
                         goodAns+=1
             total+=1
-    print(goodAns/total)
+    return goodAns*100/total 
 
-def trainAndCreateSom(scaledInputs,outPuts,colors,knnCentr):
+def trainAndCreateSom(scaledInputs,outPuts,scaledTestInput,scaledTestOutput,colors,knnCentr):
     features=2
-    som_shape=(1,15)
+    som_shape=(1,15) #y shape same as clusters
     som =   MiniSom(som_shape[0],som_shape[1],features, sigma=.5, learning_rate=.5, random_seed=10)
     som.train_batch(scaledInputs, 38000, verbose=True)
-    winner_coordinates = np.array([som.winner(x) for x in scaledInputs]).T
+    winner_coordinates = np.array([som.winner(x) for x in scaledTestInput]).T
     cluster_index = np.ravel_multi_index(winner_coordinates, som_shape)
-    for ind,colo in zip(np.unique(cluster_index),colors):
-        plt.scatter(scaledInputs[cluster_index == ind, 0],scaledInputs[cluster_index == ind, 1], label='cluster='+str(ind),color=colo)
-    testSom(scaledInputs,cluster_index,som.get_weights(),knnCentr,outPuts)
-    # plotting centroids
-    for centroid in som.get_weights():
+    for ind,colo in zip(np.unique(cluster_index),colors): #plot all points from clusters
+        plt.scatter(scaledTestInput[cluster_index == ind, 0],scaledTestInput[cluster_index == ind, 1], label='cluster='+str(ind),color=colo)
+   
+    for centroid in som.get_weights():# plotting centroids
         plt.scatter(centroid[:, 0], centroid[:, 1], marker='x',s=80, linewidths=35, color='k', label='centroid')
+    result=testSom(scaledTestInput,cluster_index,som.get_weights(),knnCentr,outPuts,scaledTestInput,scaledTestOutput)
+    plt.title('SOM clusters accuracy '+str(result)+'%')
     plt.legend()
     plt.show()
-
+def plotNormalKnn(clusters,centroids,colors):
+    for row,centroid,color in zip(clusters,centroids,colors):
+        xs=[]
+        ys=[]
+        for element in row:
+            xs.append(element[0])
+            ys.append(element[1])
+        plt.scatter(xs,ys,color=color,s=50)
+        plt.scatter(centroid[0],centroid[1],color=color,s=100)
+    plt.title('KNN clusters')
+    plt.show()
 colors=['INDIANRED','SALMON','CRIMSON','PINK','DEEPPINK','YELLOW','DARKKHAKI','LAVENDER','DARKVIOLET','GREENYELLOW','GREEN','AQUA','DEEPSKYBLUE','MIDNIGHTBLUE','GAINSBORO']
 
 clust,centr=doS1(colors)
 standard = StandardScaler()
 
+plotNormalKnn(clust,centr,colors)
+
+
 ne=standard.fit_transform(centr)
 
 training,validating,fullScaled=createData(clust)
 
-somPredicted=trainAndCreateSom(training[0],training[1],colors,ne)
+somPredicted=trainAndCreateSom(training[0],training[1],validating[0],validating[1],colors,ne)
 
-# predicted=trainAndClasify(training,validating)
-# plotResult(predicted,validating[0],validating[1],colors)
+predicted,accuracyResult=trainAndClasify(training,validating)
+plotResultNN(predicted,validating[0],validating[1],colors,accuracyResult)
 
 
 

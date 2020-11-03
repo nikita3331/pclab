@@ -9,6 +9,8 @@
     - Sieć utworzona została za pomocą sklearn. 
     - Uczona jest za pomocą danych uczących, które stanowią 80% całości zbioru.
     - Działa ona na zasadzie najlepszego dopasowania wielomianu do poszczególnych inputów. W przypadku s1, input jest dwuwymiarowy. Czyli wielomian utworzony za pomocą optymalizacji metodą gradientu stochastycznego próbuje zminimalizować błąd pomiędzy wszystkimi inputami, a outputami. W istocie by przybliżyć zasadę działania sieci neuronowej, można powiedzieć o prostej linii najlepiej dopasowującej się do pewnego zbioru punktów. W wypadku skwantowanych outputów, będą to schodki, a nie prosta linia. A wielomian w ten sposób utworzony nie będzie linią prostą, lecz skomplikowaną funkcją zależną od wielkości ukrytych warstw sieci neuronowej.
+    - Prostą linearyzację można dostrzec, kiedy nie przeskaluje się danych. Wtedy algorytm próbuje dopasować najlepszą linie, co w rezultacie daje klastry rozbite wedlug linii przez nie przechodzących. Ta sytuacja została zaprezentowana na obrazku poniżej.
+    ![Nieznormalizowane punkty](notNormalized.png)
     - Znając w ten sposób utworzony wielomian na zbiorze uczącym, wystarczy podstawić dane testowe i przeprowadzić analizę wyników.
     - Badając różne nastawy sieci neuronowej oraz stosując normalizację danych, otrzymany rezultat predykcji był na poziomie 75%. Zważywszy na to, że jest 15 klastrów, a 3 z 4 odpowiedzi były poprawne, można uznać to za dobry wynik.
 - SOM
