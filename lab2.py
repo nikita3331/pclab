@@ -129,6 +129,11 @@ plotNormalKnn(clust,centr,colors)
 ne=standard.fit_transform(centr)
 
 training,validating,fullScaled=createData(clust)
+np.save('trainingInput.npy', training[0])
+np.save('trainingOutput.npy', training[1])
+np.save('validatingInput.npy', validating[0])
+np.save('validatingOutput.npy', validating[1])
+
 
 somPredicted=trainAndCreateSom(training[0],training[1],validating[0],validating[1],colors,ne)
 
