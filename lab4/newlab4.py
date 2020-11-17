@@ -61,24 +61,18 @@ def doanfigs(trainingData,validatingData):
     with tf.Session() as sess:
         # Initialize model parameters
         sess.run(fis.init_variables)
-        trn_costs = []
-        val_costs = []
-        time_start = time.time()
         val_pred=[]
         for epoch in range(num_epochs):
-            #  Run an update step
             print('Current epoch = ',epoch)
             trn_loss, trn_pred = fis.train(sess, trainingData[0], trainingData[1])
-            # Evaluate on validation set
-            if epoch == num_epochs - 1:
-                val_pred = fis.infer(sess, validatingData[0])
+        val_pred = fis.infer(sess, validatingData[0])
         reScaledPreds=np.array(val_pred)*15
         reScaledPreds=[round(item) for item in reScaledPreds]
         reScaledOuts=np.array(validatingData[1])*15
         diff=reScaledOuts-reScaledPreds
         myNonZeros=len(np.nonzero(diff))
         totalGood=1-(myNonZeros/len(diff))
-        print('good percentage',totalGood*100)   
+        print('good percentage',totalGood*100,'%')   
 
 
     
